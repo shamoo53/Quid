@@ -27,12 +27,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const isHttpException = exception instanceof HttpException;
 
-    const statusCode = isHttpException
+    const statusCode: number = isHttpException
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // Extract message / error from HttpException response, or fall back to a
-    // generic message for unexpected errors to avoid leaking internals.
     let message: string | string[] = 'Internal server error';
     let error = 'Internal Server Error';
 
@@ -41,7 +39,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const res = exceptionResponse as Record<string, unknown>;
         message = (res.message as string | string[]) ?? exception.message;
         error = (res.error as string) ?? exception.name;
@@ -56,7 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     };
 
-    if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (statusCode >= 500) {
       this.logger.error(
         `${request.method} ${request.url} → ${statusCode}`,
         exception instanceof Error ? exception.stack : String(exception),
